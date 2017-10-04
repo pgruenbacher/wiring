@@ -34,12 +34,15 @@ class MissingAttributeError(InterfaceComplianceError):
     a required attribute.
     """
 
-    def __init__(self, attribute_name):
+    def __init__(self, instance, attribute_name):
         self.attribute_name = attribute_name
+        self.instance = instance
         """Name of the missing attribute."""
 
     def __str__(self):
-        return "Validated object is missing `{attribute}` attribute.".format(
+        self.instance.points
+        return "Validated object {instance} is missing `{attribute}` attribute.".format(
+            instance=type(self.instance),
             attribute=self.attribute_name
         )
 
@@ -278,8 +281,11 @@ class Interface(object):
                 " interface."
             )
         for name, value in six.iteritems(cls.attributes):
-            if not hasattr(instance, name):
-                raise MissingAttributeError(name)
+            # pre-python 3.2 hasattr is too silent on errors.
+            try:
+                getattr(instance, name)
+            except AttributeError:
+                raise MissingAttributeError(instance, name)
             if isinstance(value, Method):
                 value.check_compliance(getattr(instance, name))
 
